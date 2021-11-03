@@ -10,9 +10,10 @@ VM_signs = {
     "Machine model": "",
     "BIOS": "",
     "Services": "",
+    "Devices": "",
 }
 count_signs = 0
-pattern = r"\b[Vv][Mm]ware\b|[Vv][Mm]"  # Pattern for detecting VM or VMware in a string
+pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
 
 
 def check_internet_connection():
@@ -59,6 +60,7 @@ def get_Model():
 
 
 def get_BIOS():
+    """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
     global count_signs
     data = execute_command(["Get-CimInstance", "-ClassName", "Win32_BIOS",
                             "|", "fl", "Manufacturer"]).strip().split()[-1]  # get only vendor
@@ -70,16 +72,35 @@ def get_BIOS():
 
 
 def get_Services():
+    """Run Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName to get windows services"""
     global count_signs
+    hosts_vmware_services = ["VMware Authorization Service", "VMware DHCP Service", "VMware USB Arbitration Service",
+                             "VMware NAT Service", "VMware Workstation Server"]
     data = execute_command(["Get-CimInstance", "-ClassName", "Win32_Service",
                             "|", "Select-Object", "-Property", "DisplayName"]).strip().split("\n")
     for row in data:
-        if re.search(pattern, row):
+        row = row.strip()
+        if re.search(pattern, row) and row not in hosts_vmware_services:
             VM_signs["Services"] = f"Found - {row}"
             count_signs += 1
             break
     else:
         VM_signs["Services"] = "No VMware services"
+
+
+def get_Devices():
+    """Run gwmi Win32_PnPSignedDriver | select devicename to get devices"""
+    global count_signs
+    guest_vmware_devices = ["VMware VMCI Host Device", "VMware USB Pointing Device",
+                            "VMware SVGA 3D", "VMware VMCI Bus Device", "VMware Pointing Device"]
+    data = execute_command(["gwmi", "Win32_PnPSignedDriver", "|", "select", "devicename"]).strip().split("\n")
+    for row in data:
+        if re.search(pattern, row) and row in guest_vmware_devices:
+            VM_signs["Devices"] = f"Found - {row}"
+            count_signs += 1
+            break
+    else:
+        VM_signs["Devices"] = "No VMware devices"
 
 
 if __name__ == "__main__":
@@ -88,5 +109,6 @@ if __name__ == "__main__":
     get_Model()
     get_BIOS()
     get_Services()
+    get_Devices()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
