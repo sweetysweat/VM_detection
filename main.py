@@ -8,7 +8,8 @@ VM_signs = {
     "Internet Connection": "",
     "MAC": "",
     "Machine model": "",
-    "BIOS": ""
+    "BIOS": "",
+    "Services": "",
 }
 count_signs = 0
 pattern = r"\b[Vv][Mm]ware\b|[Vv][Mm]"  # Pattern for detecting VM or VMware in a string
@@ -68,10 +69,24 @@ def get_BIOS():
         VM_signs["BIOS"] = "Standard BIOS vendor"
 
 
+def get_Services():
+    global count_signs
+    data = execute_command(["Get-CimInstance", "-ClassName", "Win32_Service",
+                            "|", "Select-Object", "-Property", "DisplayName"]).strip().split("\n")
+    for row in data:
+        if re.search(pattern, row):
+            VM_signs["Services"] = f"Found - {row}"
+            count_signs += 1
+            break
+    else:
+        VM_signs["Services"] = "No VMware services"
+
+
 if __name__ == "__main__":
     check_internet_connection()
     get_MAC()
     get_Model()
     get_BIOS()
+    get_Services()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
