@@ -7,7 +7,8 @@ import requests
 VM_signs = {
     "Internet Connection": "",
     "MAC": "",
-    "Machine model": ""
+    "Machine model": "",
+    "BIOS": ""
 }
 count_signs = 0
 pattern = r"\b[Vv][Mm]ware\b|[Vv][Mm]"  # Pattern for detecting VM or VMware in a string
@@ -56,8 +57,21 @@ def get_Model():
         VM_signs["Machine model"] = "Unique model"
 
 
+def get_BIOS():
+    global count_signs
+    data = execute_command(["Get-CimInstance", "-ClassName", "Win32_BIOS",
+                            "|", "fl", "Manufacturer"]).strip().split()[-1]  # get only vendor
+    if re.search(pattern, data):
+        VM_signs["BIOS"] = data
+        count_signs += 1
+    else:
+        VM_signs["BIOS"] = "Standard BIOS vendor"
+
+
 if __name__ == "__main__":
     check_internet_connection()
     get_MAC()
     get_Model()
-    print(VM_signs)
+    get_BIOS()
+    for k, v in VM_signs.items():
+        print(f"{k}: {v}")
