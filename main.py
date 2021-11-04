@@ -11,6 +11,7 @@ VM_signs = {
     "BIOS": "",
     "Services": "",
     "Devices": "",
+    "VM Tools in processes": ""
 }
 count_signs = 0
 pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
@@ -103,6 +104,19 @@ def get_Devices():
         VM_signs["Devices"] = "No VMware devices"
 
 
+def get_processes():
+    """Run Get-Process | fl ProcessName to get all running processes to find VM Tools"""
+    global count_signs
+    data = execute_command(["Get-Process", "|", "fl", "ProcessName"])
+    for row in data:
+        if row[-1] == "vmtoolssd":
+            VM_signs["VM Tools in processes"] = "Found"
+            count_signs += 1
+            break
+    else:
+        VM_signs["VM Tools in processes"] = "Not Found"
+
+
 if __name__ == "__main__":
     check_internet_connection()
     get_MAC()
@@ -110,5 +124,6 @@ if __name__ == "__main__":
     get_BIOS()
     get_Services()
     get_Devices()
+    get_processes()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
