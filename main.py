@@ -1,5 +1,6 @@
 import subprocess
 import re
+import os
 
 
 """Here you can see all signs of VM"""
@@ -14,6 +15,7 @@ VM_signs = {
     "CPU cores": "",
     "RAM memory": "",
     "Memory": "",
+    "Directory": "",
 }
 count_signs = 0
 pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
@@ -163,6 +165,18 @@ def get_disk_size():
         VM_signs["Memory"] = f"{memory}GB - disks space"
 
 
+def find_directory():
+    """Search VMware folder in C:\Program Files"""
+    global count_signs
+    for directory in os.listdir("C:\Program Files"):
+        if directory == "VMware":
+            count_signs += 1
+            VM_signs["Directory"] = f"{directory} is found"
+            break
+    else:
+        VM_signs["Directory"] = "Nothing was found"
+
+
 if __name__ == "__main__":
     check_internet_connection()
     get_MAC()
@@ -174,5 +188,6 @@ if __name__ == "__main__":
     get_CPU()
     get_RAM()
     get_disk_size()
+    find_directory()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
