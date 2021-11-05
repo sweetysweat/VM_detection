@@ -1,6 +1,5 @@
 import subprocess
 import re
-import requests
 
 
 """Here you can see all signs of VM"""
@@ -14,26 +13,29 @@ VM_signs = {
     "VM Tools in processes": "",
     "CPU cores": "",
     "RAM memory": "",
+    "Memory": "",
 }
 count_signs = 0
 pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
-
-
-def check_internet_connection():
-    """Check Internet connection"""
-    global count_signs
-    try:
-        requests.get("https://www.google.com/", timeout=5)
-        VM_signs["Internet Connection"] = "Yes"
-    except requests.ConnectionError:
-        VM_signs["Internet Connection"] = "No"
-        count_signs += 1
 
 
 def execute_command(command: list[str]) -> str:
     """Run command in shell"""
     return subprocess.Popen(["Powershell.exe", *command], stdout=subprocess.PIPE).stdout.read().decode("cp866")
 
+
+def check_internet_connection():
+    """Check Internet connection"""
+    global count_signs
+    data = execute_command(["ping 8.8.8.8"]).strip().split()
+    for element in data:
+        if "%" in element:
+            ping_success = element[1:-1]
+            if int(ping_success) < 100:
+                VM_signs["Internet Connection"] = f"Yes, {ping_success}% packets lost"
+            else:
+                VM_signs["Internet Connection"] = f"No"
+            break
 
 def get_MAC():
     """Runs ipconfig in shell and find MAC"""
@@ -138,10 +140,27 @@ def get_RAM():
     data = execute_command(["(Get-CimInstance Win32_PhysicalMemory |"
                             " Measure-Object -Property capacity -Sum).sum /1gb"]).strip()
     if int(data) < 8:
-        VM_signs["RAM memory"] = f"Too few memory - {data}"
+        VM_signs["RAM memory"] = f"Too few memory - {data}GB"
     else:
         VM_signs["RAM memory"] = f"{data}GB of RAM memory"
 
+
+def get_disk_size():
+    """
+    Run Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,@{'Name' = 'FreeSpace (GB)';\
+    Expression= { [int]($_.Size / 1GB) }} to check all disks size
+    """
+    global count_signs
+    memory = 0
+    data = execute_command(["Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,"
+                            "@{'Name' = 'FreeSpace (GB)';Expression= { [int]($_.Size / 1GB) }}"]).strip().split()[5:]
+    for disk_info in data:
+        if disk_info.isdigit():
+            memory += int(disk_info)
+    if memory < 64:
+        VM_signs["Memory"] = f"Too few memory - {memory}GB"
+    else:
+        VM_signs["Memory"] = f"{memory}GB - disks space"
 
 
 if __name__ == "__main__":
@@ -154,5 +173,6 @@ if __name__ == "__main__":
     get_processes()
     get_CPU()
     get_RAM()
+    get_disk_size()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
