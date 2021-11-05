@@ -11,7 +11,9 @@ VM_signs = {
     "BIOS": "",
     "Services": "",
     "Devices": "",
-    "VM Tools in processes": ""
+    "VM Tools in processes": "",
+    "CPU cores": "",
+    "RAM memory": "",
 }
 count_signs = 0
 pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
@@ -36,7 +38,7 @@ def execute_command(command: list[str]) -> str:
 def get_MAC():
     """Runs ipconfig in shell and find MAC"""
     global count_signs
-    data = execute_command(["ipconfig", "/all"]).split()
+    data = execute_command(["ipconfig /all"]).split()
     for row in data:
         row = row.split()
         if row[0] in ["Физический", "Physical"]:
@@ -51,8 +53,8 @@ def get_MAC():
 def get_Model():
     """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
     global count_signs
-    data = execute_command(["get-wmiobject", "win32_computersystem",
-                            "|", "fl", "model"]).strip().split()[-1]  # -1 to get only model
+    data = execute_command(["get-wmiobject win32_computersystem | fl model"])\
+        .strip().split()[-1]  # -1 to get only model
     if re.search(pattern, data):
         VM_signs["Machine model"] = data
         count_signs += 1
@@ -63,8 +65,8 @@ def get_Model():
 def get_BIOS():
     """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
     global count_signs
-    data = execute_command(["Get-CimInstance", "-ClassName", "Win32_BIOS",
-                            "|", "fl", "Manufacturer"]).strip().split()[-1]  # get only vendor
+    data = execute_command(["Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer"])\
+        .strip().split()[-1]  # get only vendor
     if re.search(pattern, data):
         VM_signs["BIOS"] = data
         count_signs += 1
@@ -77,8 +79,8 @@ def get_Services():
     global count_signs
     hosts_vmware_services = ["VMware Authorization Service", "VMware DHCP Service", "VMware USB Arbitration Service",
                              "VMware NAT Service", "VMware Workstation Server"]
-    data = execute_command(["Get-CimInstance", "-ClassName", "Win32_Service",
-                            "|", "Select-Object", "-Property", "DisplayName"]).strip().split("\n")
+    data = execute_command(["Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName"])\
+        .strip().split("\n")
     for row in data:
         row = row.strip()
         if re.search(pattern, row) and row not in hosts_vmware_services:
@@ -107,14 +109,39 @@ def get_Devices():
 def get_processes():
     """Run Get-Process | fl ProcessName to get all running processes to find VM Tools"""
     global count_signs
-    data = execute_command(["Get-Process", "|", "fl", "ProcessName"])
+    data = execute_command(["Get-Process | fl ProcessName"])
     for row in data:
         if row[-1] == "vmtoolssd":
             VM_signs["VM Tools in processes"] = "Found"
             count_signs += 1
             break
     else:
-        VM_signs["VM Tools in processes"] = "Not Found"
+        VM_signs["VM Tools in processes"] = "Not found"
+
+
+def get_CPU():
+    """Run wmic cpu get NumberOfCores to get amount of CPU cores"""
+    global count_signs
+    data = execute_command(["wmic cpu get NumberOfCores"]).strip()[-1]
+    if int(data) < 4:
+        count_signs += 1
+        VM_signs["CPU cores"] = f"Too few cores - {data}"
+    else:
+        VM_signs["CPU cores"] = f"{data} cores"
+
+
+def get_RAM():
+    """
+    Run (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum /1gb to get RAM memory
+    """
+    global count_signs
+    data = execute_command(["(Get-CimInstance Win32_PhysicalMemory |"
+                            " Measure-Object -Property capacity -Sum).sum /1gb"]).strip()
+    if int(data) < 8:
+        VM_signs["RAM memory"] = f"Too few memory - {data}"
+    else:
+        VM_signs["RAM memory"] = f"{data}GB of RAM memory"
+
 
 
 if __name__ == "__main__":
@@ -125,5 +152,7 @@ if __name__ == "__main__":
     get_Services()
     get_Devices()
     get_processes()
+    get_CPU()
+    get_RAM()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
