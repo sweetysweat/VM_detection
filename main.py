@@ -2,7 +2,6 @@ import subprocess
 import re
 import os
 
-
 """Here you can see all signs of VM"""
 VM_signs = {
     "Internet Connection": "",
@@ -58,7 +57,7 @@ def get_MAC():
 def get_Model():
     """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
     global count_signs
-    data = execute_command(["get-wmiobject win32_computersystem | fl model"])\
+    data = execute_command(["get-wmiobject win32_computersystem | fl model"]) \
         .strip().split()[-1]  # -1 to get only model
     if re.search(pattern, data):
         VM_signs["Machine model"] = data
@@ -70,7 +69,7 @@ def get_Model():
 def get_BIOS():
     """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
     global count_signs
-    data = execute_command(["Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer"])\
+    data = execute_command(["Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer"]) \
         .strip().split()[-1]  # get only vendor
     if re.search(pattern, data):
         VM_signs["BIOS"] = data
@@ -84,7 +83,7 @@ def get_Services():
     global count_signs
     hosts_vmware_services = ["VMware Authorization Service", "VMware DHCP Service", "VMware USB Arbitration Service",
                              "VMware NAT Service", "VMware Workstation Server"]
-    data = execute_command(["Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName"])\
+    data = execute_command(["Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName"]) \
         .strip().split("\n")
     for row in data:
         row = row.strip()
@@ -114,9 +113,9 @@ def get_Devices():
 def get_processes():
     """Run Get-Process | fl ProcessName to get all running processes to find VM Tools"""
     global count_signs
-    data = execute_command(["Get-Process | fl ProcessName"])
+    data = execute_command(["Get-Process | fl ProcessName"]).strip().split("\n")
     for row in data:
-        if row[-1] == "vmtoolssd":
+        if "vmtoolsd" in row:
             VM_signs["VM Tools in processes"] = "Found"
             count_signs += 1
             break
