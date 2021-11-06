@@ -39,6 +39,7 @@ def check_internet_connection():
                 VM_signs["Internet Connection"] = f"No"
             break
 
+
 def get_MAC():
     """Runs ipconfig in shell and find MAC"""
     global count_signs
@@ -191,3 +192,4 @@ if __name__ == "__main__":
     find_directory()
     for k, v in VM_signs.items():
         print(f"{k}: {v}")
+    print(f"Probability: {round(count_signs / len(VM_signs) * 100, 2)}%")
