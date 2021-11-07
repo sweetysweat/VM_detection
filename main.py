@@ -33,6 +33,7 @@ def check_internet_connection():
         if "%" in element:
             ping_success = element[1:-1]
             if int(ping_success) < 100:
+                count_signs += 1
                 VM_signs["Internet Connection"] = f"Yes, {ping_success}% packets lost"
             else:
                 VM_signs["Internet Connection"] = f"No"
