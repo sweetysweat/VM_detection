@@ -69,10 +69,10 @@ def get_Model():
 def get_BIOS():
     """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
     global count_signs
-    data = execute_command(["Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer"]) \
-        .strip().split()[-1]  # get only vendor
-    if re.search(pattern, data):
-        VM_signs["BIOS"] = data
+    data = execute_command(["Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer"]).strip()
+    vendor = data[data.find(":") + 1:].strip()
+    if re.search(pattern, vendor):
+        VM_signs["BIOS"] = f"Vendor is {vendor}"
         count_signs += 1
     else:
         VM_signs["BIOS"] = "Standard BIOS vendor"
@@ -102,6 +102,7 @@ def get_Devices():
                             "VMware SVGA 3D", "VMware VMCI Bus Device", "VMware Pointing Device"]
     data = execute_command(["gwmi", "Win32_PnPSignedDriver", "|", "select", "devicename"]).strip().split("\n")
     for row in data:
+        row = row.strip()
         if re.search(pattern, row) and row in guest_vmware_devices:
             VM_signs["Devices"] = f"Found - {row}"
             count_signs += 1
@@ -142,6 +143,7 @@ def get_RAM():
     data = execute_command(["(Get-CimInstance Win32_PhysicalMemory |"
                             " Measure-Object -Property capacity -Sum).sum /1gb"]).strip()
     if int(data) < 8:
+        count_signs += 1
         VM_signs["RAM memory"] = f"Too few memory - {data}GB"
     else:
         VM_signs["RAM memory"] = f"{data}GB of RAM memory"
@@ -160,6 +162,7 @@ def get_disk_size():
         if disk_info.isdigit():
             memory += int(disk_info)
     if memory < 64:
+        count_signs += 1
         VM_signs["Memory"] = f"Too few memory - {memory}GB"
     else:
         VM_signs["Memory"] = f"{memory}GB - disks space"
@@ -178,17 +181,17 @@ def find_directory():
 
 
 if __name__ == "__main__":
-    # check_internet_connection()
-    # get_MAC()
-    # get_Model()
+    check_internet_connection()
+    get_MAC()
+    get_Model()
     get_BIOS()
-    # get_Services()
-    # get_Devices()
-    # get_processes()
-    # get_CPU()
-    # get_RAM()
-    # get_disk_size()
-    # find_directory()
-    # for k, v in VM_signs.items():
-    #     print(f"{k}: {v}")
-    # print(f"Probability: {round(count_signs / len(VM_signs) * 100, 2)}%")
+    get_Services()
+    get_Devices()
+    get_processes()
+    get_CPU()
+    get_RAM()
+    get_disk_size()
+    find_directory()
+    for k, v in VM_signs.items():
+        print(f"{k}: {v}")
+    print(f"Probability: {round(count_signs / len(VM_signs) * 100, 2)}%")
