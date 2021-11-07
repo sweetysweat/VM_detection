@@ -42,16 +42,17 @@ def check_internet_connection():
 def get_MAC():
     """Runs ipconfig in shell and find MAC"""
     global count_signs
-    data = execute_command(["ipconfig /all"]).split()
+    data = execute_command(["ipconfig /all"]).split("\n")
+    print(data)
     for row in data:
-        row = row.split()
-        if row[0] in ["Физический", "Physical"]:
-            if row[-1].startswith("00-0C-29"):
-                VM_signs["MAC"] = f"{row[-1]} - standard VMware MAC"
+        if any(element in row for element in ["Физический", "Physical"]):
+            data = row.split()[-1].strip()
+            if data.startswith("00-0C-29"):
                 count_signs += 1
-            else:
-                VM_signs["MAC"] = "Real MAC"
-            break
+                VM_signs["MAC"] = f"{data} - standard VMware MAC"
+                break
+    else:
+        VM_signs["MAC"] = "Real MAC"
 
 
 def get_Model():
