@@ -54,7 +54,7 @@ def get_MAC():
         VM_signs["MAC"] = "Real MAC"
 
 
-def get_Model():
+def get_model():
     """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
     global count_signs
     data = execute_command(["get-wmiobject win32_computersystem | fl model"]) \
@@ -78,7 +78,7 @@ def get_BIOS():
         VM_signs["BIOS"] = "Standard BIOS vendor"
 
 
-def get_Services():
+def get_services():
     """Run Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName to get windows services"""
     global count_signs
     hosts_vmware_services = ["VMware Authorization Service", "VMware DHCP Service", "VMware USB Arbitration Service",
@@ -95,12 +95,12 @@ def get_Services():
         VM_signs["Services"] = "No VMware services"
 
 
-def get_Devices():
+def get_devices():
     """Run gwmi Win32_PnPSignedDriver | select devicename to get devices"""
     global count_signs
     guest_vmware_devices = ["VMware VMCI Host Device", "VMware USB Pointing Device",
                             "VMware SVGA 3D", "VMware VMCI Bus Device", "VMware Pointing Device"]
-    data = execute_command(["gwmi", "Win32_PnPSignedDriver", "|", "select", "devicename"]).strip().split("\n")
+    data = execute_command(["gwmi Win32_PnPSignedDriver | select devicename"]).strip().split("\n")
     for row in data:
         row = row.strip()
         if re.search(pattern, row) and row in guest_vmware_devices:
@@ -183,10 +183,10 @@ def find_directory():
 if __name__ == "__main__":
     check_internet_connection()
     get_MAC()
-    get_Model()
+    get_model()
     get_BIOS()
-    get_Services()
-    get_Devices()
+    get_services()
+    get_devices()
     get_processes()
     get_CPU()
     get_RAM()
