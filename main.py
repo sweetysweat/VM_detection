@@ -43,7 +43,6 @@ def get_MAC():
     """Runs ipconfig in shell and find MAC"""
     global count_signs
     data = execute_command(["ipconfig /all"]).split("\n")
-    print(data)
     for row in data:
         if any(element in row for element in ["Физический", "Physical"]):
             data = row.split()[-1].strip()
@@ -179,17 +178,17 @@ def find_directory():
 
 
 if __name__ == "__main__":
-    check_internet_connection()
-    get_MAC()
-    get_Model()
+    # check_internet_connection()
+    # get_MAC()
+    # get_Model()
     get_BIOS()
-    get_Services()
-    get_Devices()
-    get_processes()
-    get_CPU()
-    get_RAM()
-    get_disk_size()
-    find_directory()
-    for k, v in VM_signs.items():
-        print(f"{k}: {v}")
-    print(f"Probability: {round(count_signs / len(VM_signs) * 100, 2)}%")
+    # get_Services()
+    # get_Devices()
+    # get_processes()
+    # get_CPU()
+    # get_RAM()
+    # get_disk_size()
+    # find_directory()
+    # for k, v in VM_signs.items():
+    #     print(f"{k}: {v}")
+    # print(f"Probability: {round(count_signs / len(VM_signs) * 100, 2)}%")
