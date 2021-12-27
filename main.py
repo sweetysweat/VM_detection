@@ -39,13 +39,13 @@ class VMDetection:
         self.get_result()
 
     @staticmethod
-    def execute_command(command: list[str]) -> str:
+    def execute_command(command: str) -> str:
         """Run command in shell"""
-        return subprocess.Popen(["Powershell.exe", *command], stdout=subprocess.PIPE).stdout.read().decode("cp866")
+        return subprocess.Popen(["Powershell.exe", command], stdout=subprocess.PIPE).stdout.read().decode("cp866")
 
     def check_internet_connection(self):
         """Check Internet connection"""
-        data = self.execute_command(["ping 8.8.8.8"]).strip().split()
+        data = self.execute_command("ping 8.8.8.8").strip().split()
         for element in data:
             if "%" in element:
                 ping_success = element[1:-1]
@@ -58,7 +58,7 @@ class VMDetection:
 
     def get_MAC(self):
         """Runs ipconfig in shell and find MAC"""
-        data = self.execute_command(["ipconfig /all"]).split("\n")
+        data = self.execute_command("ipconfig /all").split("\n")
         for row in data:
             if any(element in row for element in ["Физический", "Physical"]):
                 data = row.split()[-1].strip()
@@ -71,7 +71,7 @@ class VMDetection:
 
     def get_model(self):
         """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
-        data = self.execute_command(["get-wmiobject win32_computersystem | fl model"]) \
+        data = self.execute_command("get-wmiobject win32_computersystem | fl model") \
             .strip().split()[-1]  # -1 to get only model
         if re.search(self.pattern, data):
             self.VM_signs["Machine model"] = data
@@ -81,7 +81,7 @@ class VMDetection:
 
     def get_BIOS(self):
         """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
-        data = self.execute_command(["Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer"]).strip()
+        data = self.execute_command("Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer").strip()
         vendor = data[data.find(":") + 1:].strip()
         if re.search(self.pattern, vendor):
             self.VM_signs["BIOS"] = f"Vendor is {vendor}"
@@ -94,7 +94,7 @@ class VMDetection:
         hosts_vmware_services = ["VMware Authorization Service", "VMware DHCP Service",
                                  "VMware USB Arbitration Service",
                                  "VMware NAT Service", "VMware Workstation Server"]
-        data = self.execute_command(["Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName"]) \
+        data = self.execute_command("Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName") \
             .strip().split("\n")
         for row in data:
             row = row.strip()
@@ -110,7 +110,7 @@ class VMDetection:
         global count_signs
         guest_vmware_devices = ["VMware VMCI Host Device", "VMware USB Pointing Device",
                                 "VMware SVGA 3D", "VMware VMCI Bus Device", "VMware Pointing Device"]
-        data = self.execute_command(["gwmi Win32_PnPSignedDriver | select devicename"]).strip().split("\n")
+        data = self.execute_command("gwmi Win32_PnPSignedDriver | select devicename").strip().split("\n")
         for row in data:
             row = row.strip()
             if re.search(self.pattern, row) and row in guest_vmware_devices:
@@ -122,7 +122,7 @@ class VMDetection:
 
     def get_processes(self):
         """Run Get-Process | fl ProcessName to get all running processes to find VM Tools"""
-        data = self.execute_command(["Get-Process | fl ProcessName"]).strip().split("\n")
+        data = self.execute_command("Get-Process | fl ProcessName").strip().split("\n")
         for row in data:
             if "vmtoolsd" in row:
                 self.VM_signs["VM Tools in processes"] = "Found"
@@ -133,7 +133,7 @@ class VMDetection:
 
     def get_CPU(self):
         """Run wmic cpu get NumberOfCores to get amount of CPU cores"""
-        data = self.execute_command(["wmic cpu get NumberOfCores"]).strip()[-1]
+        data = self.execute_command("wmic cpu get NumberOfCores").strip()[-1]
         if int(data) < 4:
             self.count_signs += 1
             self.VM_signs["CPU cores"] = f"Too few cores - {data}"
@@ -144,8 +144,8 @@ class VMDetection:
         """
         Run (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property capacity -Sum).sum /1gb to get RAM memory
         """
-        data = self.execute_command(["(Get-CimInstance Win32_PhysicalMemory |"
-                                     " Measure-Object -Property capacity -Sum).sum /1gb"]).strip()
+        data = self.execute_command("(Get-CimInstance Win32_PhysicalMemory |"
+                                    " Measure-Object -Property capacity -Sum).sum /1gb").strip()
         if int(data) < 8:
             self.count_signs += 1
             self.VM_signs["RAM memory"] = f"Too few memory - {data}GB"
@@ -158,9 +158,9 @@ class VMDetection:
         Expression= { [int]($_.Size / 1GB) }} to check all disks size
         """
         memory = 0
-        data = self.execute_command(["Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,"
-                                     "@{'Name' = 'FreeSpace (GB)';Expression= { [int]($_.Size / 1GB) }}"]).strip().split()[
-               5:]
+        data = self.execute_command("Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,"
+                                    "@{'Name' = 'FreeSpace (GB)';Expression= { [int]($_.Size / 1GB) }}") \
+                   .strip().split()[5:]
         for disk_info in data:
             if disk_info.isdigit():
                 memory += int(disk_info)
