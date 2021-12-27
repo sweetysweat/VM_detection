@@ -4,24 +4,23 @@ import os
 
 
 class VMDetection:
-    """Here you can see all signs of VM"""
-    VM_signs = {
-        "Internet Connection": "",
-        "MAC": "",
-        "Machine model": "",
-        "BIOS": "",
-        "Services": "",
-        "Devices": "",
-        "VM Tools in processes": "",
-        "CPU cores": "",
-        "RAM memory": "",
-        "Memory": "",
-        "Directory": "",
-    }
-    count_signs = 0
-    pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
-
     def __init__(self):
+        """Here you can see all signs of VM"""
+        self.VM_signs = {
+            "Internet Connection": "",
+            "MAC": "",
+            "Machine model": "",
+            "BIOS": "",
+            "Services": "",
+            "Devices": "",
+            "VM Tools in processes": "",
+            "CPU cores": "",
+            "RAM memory": "",
+            "Memory": "",
+            "Directory": "",
+        }
+        self.count_signs = 0
+        self.pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
         """
         In future this programme is going to be an console application (.exe).
         So, you should run it and give answer
