@@ -154,8 +154,8 @@ class VMDetection:
 
     def get_disk_size(self):
         """
-        Run Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,@{'Name' = 'FreeSpace (GB)';\
-        Expression= { [int]($_.Size / 1GB) }} to check all disks size
+        Run Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,@{'Name' =
+        'FreeSpace (GB)'; Expression= { [int]($_.Size / 1GB) }} to check all disks size
         """
         memory = 0
         data = self.execute_command("Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID,"
