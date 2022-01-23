@@ -1,6 +1,7 @@
 import subprocess
 import re
 import os
+import socket
 
 
 class VMDetection:
@@ -45,16 +46,23 @@ class VMDetection:
 
     def check_internet_connection(self):
         """Check Internet connection"""
-        data = self.execute_command("ping 8.8.8.8").strip().split()
-        for element in data:
-            if "%" in element:
-                ping_success = element[1:-1]
-                if int(ping_success) < 100:
-                    self.count_signs += 1
-                    self.VM_signs["Internet Connection"] = f"Yes, {ping_success}% packets lost"
-                else:
-                    self.VM_signs["Internet Connection"] = f"No"
+        id_address_list = [
+            "1.1.1.1",  # Cloudflare
+            "1.0.0.1",
+            "8.8.8.8",  # Google DNS
+            "8.8.4.4",
+        ]
+        for host in id_address_list:
+            try:
+                socket.create_connection((host, 53))  # 53 is a port for DOMAIN (DNS)
+                self.VM_signs["Internet Connection"] = f"Yes"
                 break
+            except socket.error:
+                pass
+        else:
+            self.count_signs += 1
+            print(self.count_signs)
+            self.VM_signs["Internet Connection"] = f"No"
 
     def get_MAC(self):
         """Runs ipconfig in shell and find MAC"""
