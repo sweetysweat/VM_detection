@@ -80,7 +80,8 @@ class VMDetection:
     def get_model(self):
         """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
         data = self.execute_command("get-wmiobject win32_computersystem | fl model") \
-            .strip().split()[-1]  # -1 to get only model
+            .strip()[8:]  # [8:] to ignore "model : " to get only useful information
+
         if re.search(self.pattern, data):
             self.VM_signs["Machine model"] = data
             self.count_signs += 1
