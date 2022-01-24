@@ -19,6 +19,7 @@ class VMDetection:
             "RAM memory": "",
             "Memory": "",
             "Directory": "",
+            "Drivers": ""
         }
         self.count_signs = 0
         self.pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
@@ -37,6 +38,7 @@ class VMDetection:
         self.get_RAM()
         self.get_disk_size()
         self.find_directory()
+        self.get_drivers()
         self.get_result()
 
     @staticmethod
@@ -79,20 +81,18 @@ class VMDetection:
 
     def get_model(self):
         """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
-        data = self.execute_command("get-wmiobject win32_computersystem | fl model") \
-            .strip()[8:]  # [8:] to ignore "model : " to get only useful information
-
-        if re.search(self.pattern, data):
-            self.VM_signs["Machine model"] = data
+        model = self.execute_command("get-wmiobject win32_computersystem | fl model") \
+                    .strip()[8:]  # [8:] to ignore "model : " to get only useful information
+        if re.search(self.pattern, model):
+            self.VM_signs["Machine model"] = model
             self.count_signs += 1
         else:
             self.VM_signs["Machine model"] = "Unique model"
 
     def get_BIOS(self):
         """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
-        data = self.execute_command("Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer").strip()
-        vendor = data[data.find(":") + 1:].strip()
-        if re.search(self.pattern, vendor):
+        vendor = self.execute_command("Get-CimInstance -ClassName Win32_BIOS | fl Manufacturer").strip()[15:]
+        if re.search(self.pattern, vendor) or "Phoenix Technologies LTD" in vendor:
             self.VM_signs["BIOS"] = f"Vendor is {vendor}"
             self.count_signs += 1
         else:
@@ -115,10 +115,9 @@ class VMDetection:
             self.VM_signs["Services"] = "No VMware services"
 
     def get_devices(self):
-        """Run gwmi Win32_PnPSignedDriver | select devicename to get devices"""
-        global count_signs
-        guest_vmware_devices = ["VMware VMCI Host Device", "VMware USB Pointing Device",
-                                "VMware SVGA 3D", "VMware VMCI Bus Device", "VMware Pointing Device"]
+        """Run gwmi Win32_PnPSignedDriver | select devicename to get devices unique for VMs"""
+        guest_vmware_devices = ["VMware USB Pointing Device", "VMware SVGA 3D", "VMware VMCI Bus Device",
+                                "VMware Pointing Device"]
         data = self.execute_command("gwmi Win32_PnPSignedDriver | select devicename").strip().split("\n")
         for row in data:
             row = row.strip()
@@ -132,8 +131,8 @@ class VMDetection:
     def get_processes(self):
         """Run Get-Process | fl ProcessName to get all running processes to find VM Tools"""
         data = self.execute_command("Get-Process | fl ProcessName").strip().split("\n")
-        for row in data:
-            if "vmtoolsd" in row:
+        for process in data:
+            if "vmtoolsd" in process:
                 self.VM_signs["VM Tools in processes"] = "Found"
                 self.count_signs += 1
                 break
@@ -188,6 +187,17 @@ class VMDetection:
                 break
         else:
             self.VM_signs["Directory"] = "Nothing was found"
+
+    def get_drivers(self):
+        """Search VMware drivers unique for VMs"""
+        drivers = ["vmmouse.sys", "vmhgfs.sys"]
+        for file in os.listdir("C:\Windows\System32\drivers"):
+            if file in drivers:
+                self.count_signs += 1
+                self.VM_signs["Drivers"] = "Drivers from VMware found"
+                break
+        else:
+            self.VM_signs["Drivers"] = "Nothing found"
 
     def get_result(self):
         for key, value in self.VM_signs.items():
