@@ -25,7 +25,7 @@ class VMDetection:
         self.pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
         """
         In future this programme is going to be an console application (.exe).
-        So, you should run it and give answer
+        So, you should run it and program will give answer.
         """
         self.check_internet_connection()
         self.get_MAC()
