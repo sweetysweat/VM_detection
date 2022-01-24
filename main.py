@@ -2,6 +2,7 @@ import subprocess
 import re
 import os
 import socket
+import winreg
 
 
 class VMDetection:
@@ -19,7 +20,8 @@ class VMDetection:
             "RAM memory": "",
             "Memory": "",
             "Directory": "",
-            "Drivers": ""
+            "Drivers": "",
+            "Registry": "",
         }
         self.count_signs = 0
         self.pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
@@ -27,18 +29,19 @@ class VMDetection:
         In future this programme is going to be an console application (.exe).
         So, you should run it and program will give answer.
         """
-        self.check_internet_connection()
-        self.get_MAC()
-        self.get_model()
-        self.get_BIOS()
-        self.get_services()
-        self.get_devices()
-        self.get_processes()
-        self.get_CPU()
-        self.get_RAM()
-        self.get_disk_size()
-        self.find_directory()
-        self.get_drivers()
+        # self.check_internet_connection()
+        # self.get_MAC()
+        # self.get_model()
+        # self.get_BIOS()
+        # self.get_services()
+        # self.get_devices()
+        # self.get_processes()
+        # self.get_CPU()
+        # self.get_RAM()
+        # self.get_disk_size()
+        # self.find_directory()
+        # self.get_drivers()
+        self.get_registry()
         self.get_result()
 
     @staticmethod
@@ -198,6 +201,25 @@ class VMDetection:
                 break
         else:
             self.VM_signs["Drivers"] = "Nothing found"
+
+    def get_registry(self):
+        """Search VMware register entries. registry_path contains only unique values for VM"""
+        registry_path = [
+            "SOFTWARE\\VMware, Inc.\\VMware Tools",
+            "SYSTEM\\ControlSet001\\Services\\vmmouse",
+            "SYSTEM\\ControlSet001\\Services\\VMTools",
+            "SYSTEM\\ControlSet001\\Services\\VMMemCtl"
+        ]
+        for path in registry_path:
+            try:
+                winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
+                self.count_signs += 1
+                self.VM_signs["Registry"] = "Register entries from VMware found"
+                break
+            except WindowsError:
+                pass
+        else:
+            self.VM_signs["Registry"] = "Nothing found"
 
     def get_result(self):
         for key, value in self.VM_signs.items():
