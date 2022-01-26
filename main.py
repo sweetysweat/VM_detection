@@ -1,27 +1,27 @@
-import subprocess
-import re
 import os
+import re
 import socket
+import subprocess
 import winreg
 
 
 class VMDetection:
     def __init__(self):
-        """Here you can see all signs of VM"""
+        """Here you can see all signs of VM. This signs will change value if something is going to be found."""
         self.VM_signs = {
-            "Internet Connection": "",
-            "MAC": "",
-            "Machine model": "",
-            "BIOS": "",
-            "Services": "",
-            "Devices": "",
-            "VM Tools in processes": "",
-            "CPU cores": "",
-            "RAM memory": "",
-            "Memory": "",
-            "Directory": "",
-            "Drivers": "",
-            "Registry": "",
+            "Internet Connection": "Yes",
+            "MAC": "Real MAC",
+            "Machine model": "Unique model",
+            "BIOS": "Standard BIOS vendor",
+            "Services": "No VMware services",
+            "Devices": "No VMware devices",
+            "VM Tools in processes": "Not found",
+            "CPU cores": "More or exactly 4 cores",
+            "RAM memory": "More or exactly 8 GB of RAM",
+            "Memory": "more or exactly 64 GB",
+            "Directory": "Nothing was found",
+            "Drivers": "Nothing was found",
+            "Registry": "Nothing found",
         }
         self.count_signs = 0
         self.pattern = r"\b[Vv][Mm]ware\b|[V][M]"  # Pattern for detecting VM or VMware in a string
@@ -29,18 +29,18 @@ class VMDetection:
         In future this programme is going to be an console application (.exe).
         So, you should run it and program will give answer.
         """
-        # self.check_internet_connection()
-        # self.get_MAC()
-        # self.get_model()
-        # self.get_BIOS()
-        # self.get_services()
-        # self.get_devices()
-        # self.get_processes()
-        # self.get_CPU()
-        # self.get_RAM()
-        # self.get_disk_size()
-        # self.find_directory()
-        # self.get_drivers()
+        self.check_internet_connection()
+        self.get_MAC()
+        self.get_model()
+        self.get_BIOS()
+        self.get_services()
+        self.get_devices()
+        self.get_processes()
+        self.get_CPU()
+        self.get_RAM()
+        self.get_disk_size()
+        self.find_directory()
+        self.get_drivers()
         self.get_registry()
         self.get_result()
 
@@ -60,14 +60,13 @@ class VMDetection:
         for host in id_address_list:
             try:
                 socket.create_connection((host, 53))  # 53 is a port for DOMAIN (DNS)
-                self.VM_signs["Internet Connection"] = f"Yes"
                 break
             except socket.error:
                 pass
         else:
             self.count_signs += 1
             print(self.count_signs)
-            self.VM_signs["Internet Connection"] = f"No"
+            self.VM_signs["Internet Connection"] = "No"
 
     def get_MAC(self):
         """Runs ipconfig in shell and find MAC"""
@@ -79,8 +78,6 @@ class VMDetection:
                     self.count_signs += 1
                     self.VM_signs["MAC"] = f"{data} - standard VMware MAC"
                     break
-        else:
-            self.VM_signs["MAC"] = "Real MAC"
 
     def get_model(self):
         """Runs get-wmiobject win32_computersystem | fl Model in shell to get model of machine"""
@@ -89,8 +86,6 @@ class VMDetection:
         if re.search(self.pattern, model):
             self.VM_signs["Machine model"] = model
             self.count_signs += 1
-        else:
-            self.VM_signs["Machine model"] = "Unique model"
 
     def get_BIOS(self):
         """Run Get-CimInstance, -ClassName Win32_BIOS | fl Manufacturer to get BIOS model"""
@@ -98,8 +93,6 @@ class VMDetection:
         if re.search(self.pattern, vendor) or "Phoenix Technologies LTD" in vendor:
             self.VM_signs["BIOS"] = f"Vendor is {vendor}"
             self.count_signs += 1
-        else:
-            self.VM_signs["BIOS"] = "Standard BIOS vendor"
 
     def get_services(self):
         """Run Get-CimInstance -ClassName Win32_Service | Select-Object -Property DisplayName to get windows services"""
@@ -114,8 +107,6 @@ class VMDetection:
                 self.VM_signs["Services"] = f"Found - {row}"
                 self.count_signs += 1
                 break
-        else:
-            self.VM_signs["Services"] = "No VMware services"
 
     def get_devices(self):
         """Run gwmi Win32_PnPSignedDriver | select devicename to get devices unique for VMs"""
@@ -128,8 +119,6 @@ class VMDetection:
                 self.VM_signs["Devices"] = f"Found - {row}"
                 self.count_signs += 1
                 break
-        else:
-            self.VM_signs["Devices"] = "No VMware devices"
 
     def get_processes(self):
         """Run Get-Process | fl ProcessName to get all running processes to find VM Tools"""
@@ -139,8 +128,6 @@ class VMDetection:
                 self.VM_signs["VM Tools in processes"] = "Found"
                 self.count_signs += 1
                 break
-        else:
-            self.VM_signs["VM Tools in processes"] = "Not found"
 
     def get_CPU(self):
         """Run wmic cpu get NumberOfCores to get amount of CPU cores"""
@@ -148,8 +135,6 @@ class VMDetection:
         if int(data) < 4:
             self.count_signs += 1
             self.VM_signs["CPU cores"] = f"Too few cores - {data}"
-        else:
-            self.VM_signs["CPU cores"] = f"{data} cores"
 
     def get_RAM(self):
         """
@@ -160,8 +145,6 @@ class VMDetection:
         if int(data) < 8:
             self.count_signs += 1
             self.VM_signs["RAM memory"] = f"Too few memory - {data}GB"
-        else:
-            self.VM_signs["RAM memory"] = f"{data}GB of RAM memory"
 
     def get_disk_size(self):
         """
@@ -178,8 +161,6 @@ class VMDetection:
         if memory < 64:
             self.count_signs += 1
             self.VM_signs["Memory"] = f"Too few memory - {memory}GB"
-        else:
-            self.VM_signs["Memory"] = f"{memory}GB - disks space"
 
     def find_directory(self):
         """Search VMware folder in C:\Program Files"""
@@ -188,8 +169,6 @@ class VMDetection:
                 self.count_signs += 1
                 self.VM_signs["Directory"] = f"{directory} is found"
                 break
-        else:
-            self.VM_signs["Directory"] = "Nothing was found"
 
     def get_drivers(self):
         """Search VMware drivers unique for VMs"""
@@ -199,8 +178,6 @@ class VMDetection:
                 self.count_signs += 1
                 self.VM_signs["Drivers"] = "Drivers from VMware found"
                 break
-        else:
-            self.VM_signs["Drivers"] = "Nothing found"
 
     def get_registry(self):
         """Search VMware register entries. registry_path contains only unique values for VM"""
@@ -218,8 +195,6 @@ class VMDetection:
                 break
             except WindowsError:
                 pass
-        else:
-            self.VM_signs["Registry"] = "Nothing found"
 
     def get_result(self):
         for key, value in self.VM_signs.items():
