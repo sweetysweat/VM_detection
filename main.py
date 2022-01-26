@@ -19,6 +19,7 @@ class VMDetection:
             "CPU cores": "More or exactly 4 cores",
             "RAM memory": "More or exactly 8 GB of RAM",
             "Memory": "more or exactly 64 GB",
+            "Disk vendor": "Standard disk vendor",
             "Directory": "Nothing was found",
             "Drivers": "Nothing was found",
             "Registry": "Nothing found",
@@ -29,19 +30,20 @@ class VMDetection:
         In future this programme is going to be an console application (.exe).
         So, you should run it and program will give answer.
         """
-        self.check_internet_connection()
-        self.get_MAC()
-        self.get_model()
-        self.get_BIOS()
-        self.get_services()
-        self.get_devices()
-        self.get_processes()
-        self.get_CPU()
-        self.get_RAM()
-        self.get_disk_size()
-        self.find_directory()
-        self.get_drivers()
-        self.get_registry()
+        # self.check_internet_connection()
+        # self.get_MAC()
+        # self.get_model()
+        # self.get_BIOS()
+        # self.get_services()
+        # self.get_devices()
+        # self.get_processes()
+        # self.get_CPU()
+        # self.get_RAM()
+        # self.get_disk_size()
+        self.get_disk_vendor()
+        # self.find_directory()
+        # self.get_drivers()
+        # self.get_registry()
         self.get_result()
 
     @staticmethod
@@ -161,6 +163,16 @@ class VMDetection:
         if memory < 64:
             self.count_signs += 1
             self.VM_signs["Memory"] = f"Too few memory - {memory}GB"
+
+    def get_disk_vendor(self):
+        """
+        Run Get-PhysicalDisk | Select-Object Friendlyname to get vendor of disks.
+        """
+        data = self.execute_command("Get-PhysicalDisk | Select-Object Friendlyname").strip().split("\n")[2:]
+        for disk_info in data:
+            if re.search(self.pattern, disk_info) and "NVMe" not in disk_info:
+                self.VM_signs["Disk vendor"] = "Disk by VMware"
+                self.count_signs += 1
 
     def find_directory(self):
         """Search VMware folder in C:\Program Files"""
