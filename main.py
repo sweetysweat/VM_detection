@@ -184,7 +184,7 @@ class VMDetection:
 
     def get_drivers(self):
         """Search VMware drivers unique for VMs"""
-        drivers = ["vmmouse.sys", "vmhgfs.sys"]
+        drivers = ["vmmouse.sys", "vmhgfs.sys", "vmmemctl.sys"]
         for file in os.listdir("C:\Windows\System32\drivers"):
             if file in drivers:
                 self.count_signs += 1
