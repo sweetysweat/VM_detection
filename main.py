@@ -30,20 +30,20 @@ class VMDetection:
         In future this programme is going to be an console application (.exe).
         So, you should run it and program will give answer.
         """
-        # self.check_internet_connection()
-        # self.get_MAC()
-        # self.get_model()
-        # self.get_BIOS()
-        # self.get_services()
-        # self.get_devices()
-        # self.get_processes()
-        # self.get_CPU()
-        # self.get_RAM()
-        # self.get_disk_size()
+        self.check_internet_connection()
+        self.get_MAC()
+        self.get_model()
+        self.get_BIOS()
+        self.get_services()
+        self.get_devices()
+        self.get_processes()
+        self.get_CPU()
+        self.get_RAM()
+        self.get_disk_size()
         self.get_disk_vendor()
-        # self.find_directory()
-        # self.get_drivers()
-        # self.get_registry()
+        self.find_directory()
+        self.get_drivers()
+        self.get_registry()
         self.get_result()
 
     @staticmethod
